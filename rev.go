@@ -17,7 +17,7 @@ func NewRevByteScanner(r io.ReaderAt, offset int64) io.ByteScanner {
 	return &rev{r: r, o: offset + 1, p: -1}
 }
 
-const bs = 8 << 10
+const bs = 4 << 10
 
 type rev struct {
 	r    io.ReaderAt
