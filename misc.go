@@ -9,23 +9,29 @@ import (
 	"os"
 )
 
-type stater interface {
-	Stat() (os.FileInfo, error)
-}
-
-type lener interface {
-	Len() int
-}
+type (
+	stater interface {
+		Stat() (os.FileInfo, error)
+	}
+	lener interface {
+		Len() int
+	}
+	sizer interface {
+		Size() int64
+	}
+)
 
 // Len returns the length of a Seeker.
-// If s has a Len or Stat method, one of those will be used. Otherwise, Seek
-// will be used to determine the length, before restoring the cursor to its
+// If s has a Len, Size, or Stat method, one of those will be used. Otherwise,
+// Seek will be used to determine the length, before restoring the cursor to its
 // previous position.
 func Len(s io.Seeker) (int64, error) {
-	if s, ok := s.(lener); ok {
+	switch s := s.(type) {
+	case sizer:
+		return s.Size(), nil
+	case lener:
 		return int64(s.Len()), nil
-	}
-	if s, ok := s.(stater); ok {
+	case stater:
 		info, err := s.Stat()
 		if err != nil {
 			return 0, err
