@@ -7,6 +7,7 @@ package curio
 import (
 	"errors"
 	"io"
+	"unicode/utf8"
 )
 
 // NewRevByteScanner returns a backward ByteScanner.
@@ -14,12 +15,12 @@ func NewRevByteScanner(r io.ReaderAt, offset int64) io.ByteScanner {
 	if offset < 0 {
 		panic("negative offset is not allowed")
 	}
-	return &rev{r: r, o: offset + 1, p: -1}
+	return &rb{r: r, o: offset + 1, p: -1}
 }
 
 const bs = 4 << 10
 
-type rev struct {
+type rb struct {
 	r    io.ReaderAt
 	o    int64
 	p, q int16
@@ -27,7 +28,7 @@ type rev struct {
 	b    [bs]byte
 }
 
-func (r *rev) ReadByte() (c byte, err error) {
+func (r *rb) ReadByte() (c byte, err error) {
 	if r.p < 0 {
 		if r.o == 0 {
 			return 0, io.EOF
@@ -50,11 +51,60 @@ func (r *rev) ReadByte() (c byte, err error) {
 	return
 }
 
-func (r *rev) UnreadByte() error {
+func (r *rb) UnreadByte() error {
 	if r.u {
 		r.p++
 		r.u = false
 		return nil
 	}
-	return errors.New("UnreadByte: previous operation was not a read")
+	return errors.New("curio: invalid use of UnreadByte")
+}
+
+var ErrInvalidRune = errors.New("curio: invalid rune")
+
+func NewRevRuneScanner(r io.ReaderAt, offset int64) io.RuneScanner {
+	if offset < 0 {
+		panic("negative offset is not allowed")
+	}
+	return &rr{rb: rb{r: r, o: offset + 1, p: -1}, r: -1}
+}
+
+type rr struct {
+	rb rb
+	b  [utf8.UTFMax]byte
+	r  rune
+	u  bool
+}
+
+func (r *rr) ReadRune() (rn rune, size int, err error) {
+	if r.u {
+		r.u = false
+		return r.r, utf8.RuneLen(rn), nil
+	}
+	for i := len(r.b) - 1; i >= 0; i-- {
+		c, err := r.rb.ReadByte()
+		if err != nil {
+			return 0, 0, err
+		}
+		r.b[i] = c
+		rn, size = utf8.DecodeRune(r.b[i:])
+		if rn == utf8.RuneError {
+			continue
+		} else if size < len(r.b)-i {
+			r.r = rn
+			return 0, len(r.b) - i, ErrInvalidRune
+		}
+		r.r = rn
+		r.u = false
+		return rn, size, nil
+	}
+	return 0, 0, ErrInvalidRune
+}
+
+func (r *rr) UnreadRune() error {
+	if r.u || r.r < 0 {
+		return errors.New("curio: invalid use of UnreadRune")
+	}
+	r.u = true
+	return nil
 }
