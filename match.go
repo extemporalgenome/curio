@@ -4,12 +4,7 @@
 
 package curio
 
-import (
-	"errors"
-	"io"
-)
-
-var ErrByteMismatch = errors.New("curio: Match byte mismatch")
+import "io"
 
 // Match provides a simple sequential ASCII text matcher.
 // It is specialized for processing well formed, structured printable ASCII.

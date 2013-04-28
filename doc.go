@@ -4,3 +4,10 @@
 
 // Package curio provides io utility implementations.
 package curio
+
+import "errors"
+
+var (
+	ErrByteMismatch = errors.New("curio: Match byte mismatch")
+	ErrInvalidRune  = errors.New("curio: invalid rune")
+)

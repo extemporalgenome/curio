@@ -60,8 +60,7 @@ func (r *rb) UnreadByte() error {
 	return errors.New("curio: invalid use of UnreadByte")
 }
 
-var ErrInvalidRune = errors.New("curio: invalid rune")
-
+// NewRevByteScanner returns a backward RuneScanner.
 func NewRevRuneScanner(r io.ReaderAt, offset int64) io.RuneScanner {
 	if offset < 0 {
 		panic("negative offset is not allowed")
