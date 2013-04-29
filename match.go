@@ -19,6 +19,9 @@ import "io"
 //    are non-greedy, and match zero or more characters.
 //  * \x00: ASCII whitespace bytes.
 //  * \x01: non-whitespace ASCII bytes.
+//  * \xa0: lowercase letters.
+//  * \xa1: uppercase letters.
+//  * \xaf: letters.
 //  * \xd0: decimal digits.
 //  * \xd6: hexadecimal digits.
 //  * \xd8: octal digits.
@@ -154,6 +157,9 @@ var tab = [1 << 8]byte{
 
 	'\x00': prg | ws,
 	'\x01': prg | nws,
+	'\xa0': prg | ll,
+	'\xa1': prg | lu,
+	'\xaf': prg | lx,
 	'\xd8': prg | do,
 	'\xd0': prg | dd,
 	'\xd6': prg | dx,
